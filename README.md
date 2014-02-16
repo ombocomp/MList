@@ -14,7 +14,7 @@ ioSum = ioSum' 0
 `ioSum` continuously reads in some input and sums the values. We would expect
 to be able to get, say, the first 10 values of this stream:
 
-```
+```haskell
 > ioSum >>= return . take 10
 (endless loop)
 ```
