@@ -1,0 +1,23 @@
+--Haddock-format: http://www.haskell.org/haddock/doc/html/ch03s08.html
+--Make documentation: (just once) >cabal configure
+--                                >cabal haddock [--executables]
+--Make .exe: ghc --make Main.hs
+
+name:          mlist
+version:       1.0
+build-type:    Simple
+cabal-version: >= 1.2
+author:        Janos Tapolczai
+maintainer:    Janos Tapolczai
+stability:     experimental
+bug-reports:   mailto:x@y.com
+synopsis:      Monadic lists
+description:   TODO
+
+category:      Data
+license-file:  LICENSE.md
+
+library
+   build-depends:   base >= 4.6.0.1, template-haskell, containers >= 0.4.0.0
+   extensions:      DoAndIfThenElse, EmptyDataDecls, FunctionalDependencies, MultiParamTypeClasses, FlexibleInstances
+   exposed-modules: Data.MList

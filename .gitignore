@@ -1,0 +1,6 @@
+*.hi
+*.ho
+dist/
+GHCTest.hs
+make_doc.bat
+*.stackdump
