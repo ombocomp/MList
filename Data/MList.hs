@@ -187,10 +187,10 @@ unfoldML f acc = do v <- f acc
                                       Just (x,acc') -> x :# unfoldML f acc')
 
 -- |Takes n elements from the beginning of an MList.
-takeML :: Monad m => Int -> MList m a -> m (MList m a)
-takeML n _ | n <= 0 = return MNil
-takeML _ MNil = return MNil
-takeML i (x :# xs) = return $ x :# (xs >>= takeML (i-1))
+takeML :: Monad m => Int -> MList m a -> MList m a
+takeML n _ | n <= 0 = MNil
+takeML _ MNil = MNil
+takeML i (x :# xs) = x :# liftM (takeML (i-1)) xs
 
 -- |Drops n elements from the beginning of an MList
 dropML :: Monad m => Int -> MList m a -> m (MList m a)
@@ -199,10 +199,10 @@ dropML _ MNil = return MNil
 dropML i (_ :# xs) = xs >>= dropML (i-1)
 
 -- |Takes elements of an MList as long as a predicate is fulfilled.
-takeWhileML :: Monad m => (a -> Bool) -> MList m a -> m (MList m a)
-takeWhileML _ MNil = return MNil
-takeWhileML f (x :# xs) | f x       = return $ x :# (xs >>= takeWhileML f)
-                        | otherwise = return MNil
+takeWhileML :: Monad m => (a -> Bool) -> MList m a -> MList m a
+takeWhileML _ MNil = MNil
+takeWhileML f (x :# xs) | f x       = x :# liftM (takeWhileML f) xs
+                        | otherwise = MNil
 
 -- |Drops elements from an MList as long as a predicate is fulfilled.
 dropWhileML :: Monad m => (a -> Bool) -> MList m a -> m (MList m a)
