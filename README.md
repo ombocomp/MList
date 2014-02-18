@@ -54,4 +54,7 @@ Lazy evaluation now works as intended:
 [3, 9, 24, 46, 88, 90, 93, 121, 452, 530]
 ```
 
+Contact
+-------
 
+Comments/contributions/bug reports/compaints are welcome. Do feel free to report an issue or write a mail!
