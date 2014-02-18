@@ -2,38 +2,9 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-{- |Operations on monadic lists (MLists). The functions in this module
-    largely mirror those found in 'Data.List'.
-    
-    Monadic lists make it possible to lazily generate streams of
-    monadic values, which regular lists can't do. An example:
-
-    @
-getMeasurement :: IO Int
-getMeasurement = ...
-
-measurementStream :: IO [Int]
-measurementStream = do x <- getMeasurement
-                xs <- measurementStream
-                return (x:xs)
-    @
-
-    Because @getMeasurement@ is monadic, it's not possible to extract
-    anything from @measurementStream@ - @head measurementStream@ will not
-    terminate because, thanks to the IO monad, the @xs@ it its body
-    will be computed before the @return@.
-
-    The data type @MList m a@ solves this problem with a modified @:@ -
-    instead of @a : [a]@, an MList has @a :# m [a]@. The @m@ in the tail
-    is a monad and allows the confinement of the eager, monadic computation.
-
-    We can thus rewrite @measurementStream@ to be useful again:
-
-@
-measurementStream :: IO (MList IO Int)
-measurementStream = do x <- getMeasurement
-                       return (x :# measurementStream)
-@
+{- |Operations on monadic lists (MLists), which allow the lazy computation
+    of stream of monadic values. The functions in this module largely mirror
+    those found in 'Data.List'.
 -}
 module Data.MList (
   MList(..),
@@ -83,7 +54,9 @@ module Data.MList (
   elemML,
   notElemML,
 
-  -- * Zipping MLists
+  -- * Zipping and unzipping MLists
+
+  -- ** Zipping
   zipML,
   zip3ML,
   zip4ML,
@@ -91,6 +64,7 @@ module Data.MList (
   zip6ML,
   zip7ML,
 
+  -- ** Zipping with functions
   zipWithML,
   zipWith3ML,
   zipWith4ML,
@@ -98,6 +72,7 @@ module Data.MList (
   zipWith6ML,
   zipWith7ML,
 
+  -- ** Unzipping
   unzipML,
   unzip3ML,
   unzip4ML,
