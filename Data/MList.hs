@@ -36,6 +36,8 @@ measurementStream = do x <- getMeasurement
 @
 -}
 module Data.MList (
+  MList(..),
+
   -- * Conversion to and from lists
   fromMList,
   toMList,
@@ -114,6 +116,7 @@ infix 5 :#
 
 -- |Monadic version of 'Show'.
 class Monad m => MShow m a | a -> m where
+  -- |Converts a value to a monadic string.
   showM :: a -> m String
 
 instance (Monad m, Show a) => MShow m (MList m a) where
@@ -182,6 +185,7 @@ foldlML f acc (x :# xs) = do acc' <- f acc x
                              xs' <- xs
                              foldlML f acc' xs'
 
+-- |Folds an MList from the right.
 foldrML :: Monad m => (a -> b -> m b) -> b -> MList m a -> m b
 foldrML _ acc MNil = return acc
 foldrML f acc (x :# xs) = do y <- (f x acc)
