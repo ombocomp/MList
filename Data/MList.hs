@@ -57,7 +57,8 @@ module Data.MList (
   reverseML,
 
   -- * Folds
-  foldML,
+  foldlML,
+  foldrML,
   unfoldML,
 
   -- * Accumulating maps
@@ -94,12 +95,12 @@ module Data.MList (
   zipWith6ML,
   zipWith7ML,
 
-  --unzipML,
-  --unzip3ML,
-  --unzip4ML,
-  --unzip5ML,
-  --unzip6ML,
-  --unzip7ML,
+  unzipML,
+  unzip3ML,
+  unzip4ML,
+  unzip5ML,
+  unzip6ML,
+  unzip7ML,
   ) where
 
 import Control.Monad
@@ -149,7 +150,7 @@ nullML _ = False
 
 -- |Returns the length of an MList.
 lengthML :: Monad m => MList m a -> m Int
-lengthML = foldML (\x _ -> return (x+1)) 0
+lengthML = foldlML (\x _ -> return (x+1)) 0
 
 -- |Returns the head of an MList.
 headML :: Monad m => MList m a -> a
@@ -174,11 +175,17 @@ lastML (x :# xs) = do xs' <- xs
                                   (_ :# _) -> lastML xs'
 
 -- |Folds an MList from the left.
-foldML :: Monad m => (a -> b -> m a) -> a -> MList m b -> m a
-foldML _ acc MNil = return acc
-foldML f acc (x :# xs) = do acc' <- f acc x
-                            xs' <- xs
-                            foldML f acc' xs'
+foldlML :: Monad m => (a -> b -> m a) -> a -> MList m b -> m a
+foldlML _ acc MNil = return acc
+foldlML f acc (x :# xs) = do acc' <- f acc x
+                             xs' <- xs
+                             foldlML f acc' xs'
+
+foldrML :: Monad m => (a -> b -> m b) -> b -> MList m a -> m b
+foldrML _ acc MNil = return acc
+foldrML f acc (x :# xs) = do y <- (f x acc)
+                             xs' <- xs
+                             foldrML f y xs'
 
 -- |Unfolds an MList.
 unfoldML :: Monad m => (b -> m (Maybe (a,b))) -> b -> m (MList m a)
@@ -423,3 +430,50 @@ zipWith7ML f (x :# xs) (y :# ys) (z :# zs) (u :# us) (v :# vs) (w :# ws) (a :# a
                           as' <- as
                           return (zipWith7ML f xs' ys' zs' us' vs' ws' as')
 zipWith7ML _ _ _ _ _ _ _ _ = MNil
+
+-- |Transforms a list of pairs into a list of components.
+unzipML :: Monad m
+        => MList m (a,b)
+        -> m (MList m a, MList m b)
+unzipML = foldrML (\(a,b) (as,bs) -> return (a :# return as, b :# return bs))
+                  (MNil, MNil)
+
+-- |Transforms a list of pairs into a list of components.
+unzip3ML :: Monad m
+        => MList m (a,b,c)
+        -> m (MList m a, MList m b, MList m c)
+unzip3ML = foldrML (\(a,b,c) (as,bs,cs) -> return (a :# return as, b :# return bs, c :# return cs))
+                   (MNil, MNil, MNil)
+
+-- |Transforms a list of pairs into a list of components.
+unzip4ML :: Monad m
+        => MList m (a,b,c,d)
+        -> m (MList m a, MList m b, MList m c, MList m d)
+unzip4ML = foldrML (\(a,b,c,d) (as,bs,cs,ds) -> return (a :# return as, b :# return bs, c :# return cs,
+                                                        d :# return ds))
+                   (MNil, MNil, MNil, MNil)
+
+-- |Transforms a list of pairs into a list of components.
+unzip5ML :: Monad m
+        => MList m (a,b,c,d,e)
+        -> m (MList m a, MList m b, MList m c, MList m d, MList m e)
+unzip5ML = foldrML (\(a,b,c,d,e) (as,bs,cs,ds,es) -> return (a :# return as, b :# return bs, c :# return cs,
+                                                             d :# return ds, e :# return es))
+                   (MNil, MNil, MNil, MNil, MNil)
+
+-- |Transforms a list of pairs into a list of components.
+unzip6ML :: Monad m
+        => MList m (a,b,c,d,e,f)
+        -> m (MList m a, MList m b, MList m c, MList m d, MList m e, MList m f)
+unzip6ML = foldrML (\(a,b,c,d,e,f) (as,bs,cs,ds,es,fs) -> return (a :# return as, b :# return bs, c :# return cs,
+                                                                  d :# return ds, e :# return es, f :# return fs))
+                   (MNil, MNil, MNil, MNil, MNil, MNil)
+
+-- |Transforms a list of pairs into a list of components.
+unzip7ML :: Monad m
+        => MList m (a,b,c,d,e,f,g)
+        -> m (MList m a, MList m b, MList m c, MList m d, MList m e, MList m f, MList m g)
+unzip7ML = foldrML (\(a,b,c,d,e,f,g) (as,bs,cs,ds,es,fs,gs) -> return (a :# return as, b :# return bs, c :# return cs,
+                                                                       d :# return ds, e :# return es, f :# return fs,
+                                                                       g :# return gs))
+                   (MNil, MNil, MNil, MNil, MNil, MNil, MNil)
