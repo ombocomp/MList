@@ -62,7 +62,8 @@ module Data.MList (
   unfoldML,
 
   -- * Accumulating maps
-  mapAccumML,
+  mapAccumlML,
+  mapAccumrML,
 
   -- * Infinite MLists
   iterateML,
@@ -229,17 +230,29 @@ reverseML = reverse' MNil
   where reverse' acc MNil = return acc
         reverse' acc (x :# xs) = xs >>= reverse' (x :# return acc)
 
--- |Combines 'foldML' and 'mapML', both applying a function to
+-- |Combines 'foldlML' and 'mapML', both applying a function to
 --  every element and accumulating a value.
-mapAccumML :: Monad m
-           => (acc -> a -> m (acc, b))
-           -> acc
-           -> MList m a
-           -> m (acc, MList m b)
-mapAccumML _ acc MNil = return (acc, MNil)
-mapAccumML f acc (x :# xs) = do (acc', y) <- f acc x
-                                (acc'', ys) <- xs >>= mapAccumML f acc'
-                                return (acc'', y :# return ys)
+mapAccumlML :: Monad m
+            => (acc -> a -> m (acc, b))
+            -> acc
+            -> MList m a
+            -> m (acc, MList m b)
+mapAccumlML _ acc MNil = return (acc, MNil)
+mapAccumlML f acc (x :# xs) = do (acc', y) <- f acc x
+                                 (acc'', ys) <- xs >>= mapAccumlML f acc'
+                                 return (acc'', y :# return ys)
+
+-- |Combines 'foldrML' and 'mapML', both applying a function to
+--  every element and accumulating a value.
+mapAccumrML :: Monad m
+            => (acc -> a -> m (acc, b))
+            -> acc
+            -> MList m a
+            -> m (acc, MList m b)
+mapAccumrML _ acc MNil = return (acc, MNil)
+mapAccumrML f acc (x :# xs) = do (acc', ys) <- xs >>= mapAccumrML f acc
+                                 (acc'', y) <- f acc' x
+                                 return (acc'', y :# return ys)
 
 -- |Constructs the infinite MList @[x, f x, f (f x), ...]@.
 iterateML :: Monad m => (a -> m a) -> a -> MList m a
