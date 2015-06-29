@@ -1,6 +1,8 @@
 *.hi
 *.ho
 dist/
+.cabal.sandbox.config
+.cabal-sandbox/
 GHCTest.hs
 make_doc.bat
 *.stackdump
