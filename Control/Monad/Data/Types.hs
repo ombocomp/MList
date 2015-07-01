@@ -6,6 +6,7 @@ module Control.Monad.Data.Types (
    BiCons(..),
    MList(..),
    MTree(..),
+   bc,
    ) where
 
 import Control.Monad.Data.Class
@@ -14,6 +15,12 @@ import Data.Tree
 
 -- |A type that's either Nil or a pair of elements.
 data BiCons a b = Nil | a :# b
+
+-- |Case distinction for 'BiCons'.
+bc :: c -> (a -> b -> c) -> BiCons a b -> c
+{-# INLINE bc #-}
+bc nil cons c = case c of Nil      -> nil
+                          (h :# t) -> cons h t
 
 -- |Monadic list that can be evaluated incrementally.
 newtype MList m a = ML{runML :: m (BiCons a (MList m a))}
