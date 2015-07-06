@@ -6,7 +6,7 @@
     of stream of monadic values. The functions in this module largely mirror
     those found in 'Data.List'.
 -}
-module Data.MList (
+module Data.List.Monadic (
   MList(..),
 
   -- * Conversion to and from lists
@@ -87,127 +87,20 @@ import Control.Monad
 --  This allows for the lazy generation of elements, even if the list
 --  is a stream of monadic values.
 data MList m a = MNil | a :# (m (MList m a))
-infix 5 :#
-
--- |Monadic version of 'Show'.
-class Monad m => MShow m a | a -> m where
-  -- |Converts a value to a monadic string.
-  showM :: a -> m String
-
-instance (Monad m, Show a) => MShow m (MList m a) where
-  showM xs = case xs of MNil     -> return "[]"
-                        (_ :# _) -> do content <- showM' xs
-                                       return $ "[" ++ content ++ "]"
-    where 
-          showM' MNil = return ""
-          showM' (x :# xs') = do xs'' <- xs'
-                                 rest <- showM' xs''
-                                 let sep = case xs'' of MNil -> ""
-                                                        _    -> ","
-                                 return $ show x ++ sep ++ rest
-
--- |Turns a monad list into a regular list.
-fromMList :: Monad m => MList m a -> m [a]
-fromMList MNil = return []
-fromMList (x :# xs) = do xs' <- xs >>= fromMList
-                         return $ x : xs'
-
--- |Turns a regular list into an MList
-toMList :: Monad m => [a] -> MList m a
-toMList [] = MNil
-toMList (x:xs) = x :# return (toMList xs)
+infixr 5 :#
 
 -- |Concatenates two MLists.
-(+++) :: Monad m => MList m a -> MList m a -> MList m a
-MNil +++ ys = ys
-(x :# xs) +++ ys = x :# liftM (+++ ys) xs
+(++#) :: Monad m => MList m a -> MList m a -> MList m a
+MNil ++# ys = ys
+(x :# xs) ++# ys = x :# fmap (++# ys) xs
 
--- |Tests whether an MList is empty.
-nullML :: Monad m => MList m a -> Bool
-nullML MNil = True
-nullML _ = False
 
--- |Returns the length of an MList.
-lengthML :: Monad m => MList m a -> m Int
-lengthML = foldlML (\x _ -> return (x+1)) 0
-
--- |Returns the head of an MList.
-headML :: Monad m => MList m a -> a
-headML MNil = error "headML: head of empty MList!"
-headML (x :# _) = x
-
--- |Returns the tail of an MList.
-tailML :: Monad m => MList m a -> m (MList m a)
-tailML MNil = error "tailML: tail of empty MList!"
-tailML (_ :# xs) = xs
-
--- |Returns an MList without its last element.
-initML :: Monad m => MList m a -> MList m a
-initML MNil = error "initML: init of an empty MList!"
-initML (x :# xs) = x :# liftM initML xs
-
--- |Returns the last element of an MList.
-lastML :: Monad m => MList m a -> m a
-lastML MNil = error "lastML: last of an empty MList!"
-lastML (x :# xs) = do xs' <- xs
-                      case xs' of MNil      -> return x
-                                  (_ :# _) -> lastML xs'
-
--- |Folds an MList from the left.
-foldlML :: Monad m => (a -> b -> m a) -> a -> MList m b -> m a
-foldlML _ acc MNil = return acc
-foldlML f acc (x :# xs) = do acc' <- f acc x
-                             xs' <- xs
-                             foldlML f acc' xs'
-
--- |Folds an MList from the right.
-foldrML :: Monad m => (a -> b -> m b) -> b -> MList m a -> m b
-foldrML _ acc MNil = return acc
-foldrML f acc (x :# xs) = do y <- (f x acc)
-                             xs' <- xs
-                             foldrML f y xs'
-
--- |Unfolds an MList.
-unfoldML :: Monad m => (b -> m (Maybe (a,b))) -> b -> m (MList m a)
-unfoldML f acc = do v <- f acc
-                    return (case v of Nothing       -> MNil
-                                      Just (x,acc') -> x :# unfoldML f acc')
-
--- |Takes n elements from the beginning of an MList.
-takeML :: Monad m => Int -> MList m a -> MList m a
-takeML n _ | n <= 0 = MNil
-takeML _ MNil = MNil
-takeML i (x :# xs) = x :# liftM (takeML (i-1)) xs
-
--- |Drops n elements from the beginning of an MList
-dropML :: Monad m => Int -> MList m a -> m (MList m a)
-dropML n xs | n <= 0 = return xs
-dropML _ MNil = return MNil
-dropML i (_ :# xs) = xs >>= dropML (i-1)
-
--- |Takes elements of an MList as long as a predicate is fulfilled.
-takeWhileML :: Monad m => (a -> Bool) -> MList m a -> MList m a
-takeWhileML _ MNil = MNil
-takeWhileML f (x :# xs) | f x       = x :# liftM (takeWhileML f) xs
-                        | otherwise = MNil
-
--- |Drops elements from an MList as long as a predicate is fulfilled.
-dropWhileML :: Monad m => (a -> Bool) -> MList m a -> m (MList m a)
-dropWhileML _ MNil = return MNil
-dropWhileML f (x :# xs) | f x       = xs >>= dropWhileML f
-                        | otherwise = xs
 
 -- |Applies a function to every element of an MList.
 mapML :: Monad m => (a -> m b) -> MList m a -> m (MList m b)
 mapML _ MNil = return MNil
 mapML f (x :# xs) = do y <- f x
                        return $ y :# (xs >>= mapML f)
-
--- |Reverses an MList.
-reverseML :: Monad m => MList m a -> m (MList m a)
-reverseML = reverse' MNil
-  where reverse' acc MNil = return acc
-        reverse' acc (x :# xs) = xs >>= reverse' (x :# return acc)
 
 -- |Combines 'foldlML' and 'mapML', both applying a function to
 --  every element and accumulating a value.

@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 
-module Control.Monad.Structure.List (
+module Control.Monad.Data.List (
     module Control.Monad.Data.Foldable,
     module Control.Monad.Data.Types,
     -- * List functions
@@ -14,6 +14,7 @@ module Control.Monad.Structure.List (
     takeWhileML,
     dropML,
     dropWhileML,
+    iterateML,
     ) where
 
 import Control.Monad.Catch
@@ -21,6 +22,8 @@ import Control.Monad.Data.Foldable
 import Control.Monad.Data.List.Internal
 import Control.Monad.Data.Types (MList(..), BiCons(..), bc)
 import qualified Data.List.Safe as LS
+
+import Debug.Trace
 
 -- |Tests whether an MList is empty.
 nullML :: Functor m => MList m a -> m Bool
@@ -56,8 +59,8 @@ takeWhileML :: Functor m => (a -> Bool) -> MList m a -> MList m a
 takeWhileML f (ML xs) = ML $
    fmap (bc Nil $ \h t -> if f h then h :# takeWhileML f t else Nil) xs
 
-takeML :: (Functor m, Integral a) => a -> MList m a -> MList m a
-takeML 0 xs = xs
+takeML :: (Applicative m, Integral a, Show a) => a -> MList m a -> MList m a
+takeML 0 _ = ML (pure Nil)
 takeML n (ML xs) = ML $ fmap (bc Nil $ \h t -> h :# takeML (n-1) t) xs
 
 dropML :: (Monad m, Integral a) => a -> MList m a -> MList m a
@@ -67,6 +70,8 @@ dropML n (ML xs) = ML $ xs >>= bc (return Nil) (\_ t -> runML $ dropML (n-1) t)
 dropWhileML :: Monad m => (a -> Bool) -> MList m a -> MList m a
 dropWhileML f (ML xs) = ML $ xs >>= bc (return Nil) (\h t -> if f h then runML (dropWhileML f t) else return (h :# t))
 
+iterateML :: Functor m => (a -> m a) -> a -> MList m a
+iterateML f x = ML $ fmap (\y -> y :# iterateML f y) (f x)
 
 {-
 
@@ -76,30 +81,6 @@ unfoldML f acc = do v <- f acc
                     return (case v of Nothing       -> MNil
                                       Just (x,acc') -> x :# unfoldML f acc')
 
-
--- |Takes n elements from the beginning of an MList.
-takeML :: Monad m => Int -> MList m a -> MList m a
-takeML n _ | n <= 0 = MNil
-takeML _ MNil = MNil
-takeML i (x :# xs) = x :# fmap (takeML (i-1)) xs
-
--- |Drops n elements from the beginning of an MList
-dropML :: Monad m => Int -> MList m a -> m (MList m a)
-dropML n xs | n <= 0 = return xs
-dropML _ MNil = return MNil
-dropML i (_ :# xs) = xs >>= dropML (i-1)
-
--- |Takes elements of an MList as long as a predicate is fulfilled.
-takeWhileML :: Monad m => (a -> Bool) -> MList m a -> MList m a
-takeWhileML _ MNil = MNil
-takeWhileML f (x :# xs) | f x       = x :# fmap (takeWhileML f) xs
-                        | otherwise = MNil
-
--- |Drops elements from an MList as long as a predicate is fulfilled.
-dropWhileML :: Monad m => (a -> Bool) -> MList m a -> m (MList m a)
-dropWhileML _ MNil = return MNil
-dropWhileML f (x :# xs) | f x       = xs >>= dropWhileML f
-                        | otherwise = xs
 
 -- |Reverses an MList.
 reverseML :: Monad m => MList m a -> m (MList m a)

@@ -1,5 +1,6 @@
 *.hi
 *.ho
+*.din_hi
 dist/
 .cabal.sandbox.config
 .cabal-sandbox/
