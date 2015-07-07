@@ -64,7 +64,6 @@ instance FoldableM MList where
    type Con MList r = Monad r
    foldrM f acc (ML xs) = xs >>= \case{Nil -> return acc; (h :# t) -> f h <$> foldrM f acc t}
 
-
 instance MonadicStructure MTree where
    type Target MTree = Tree
 
@@ -97,3 +96,7 @@ instance Monad m => Applicative (MTree m) where
    Node 12 $ [fmap (+10) 1, fmap (+10) 3] 
 
 -}
+
+--instance FoldableM MTree where
+--   type Con MTree r = Monad r
+--   foldrM f acc (MT xs) = 

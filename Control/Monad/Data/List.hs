@@ -1,23 +1,28 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Control.Monad.Data.List (
-    module Control.Monad.Data.Foldable,
-    module Control.Monad.Data.Types,
-    -- * List functions
-    nullML,
-    lengthML,
-    headML,
-    tailML,
-    initML,
-    lastML,
-    takeML,
-    takeWhileML,
-    dropML,
-    dropWhileML,
-    iterateML,
-    ) where
+   module Control.Monad.Data.Class,
+   module Control.Monad.Data.Foldable,
+   module Control.Monad.Data.Types,
+   -- * List functions
+   nullML,
+   lengthML,
+   headML,
+   tailML,
+   initML,
+   lastML,
+   takeML,
+   takeWhileML,
+   dropML,
+   dropWhileML,
+   iterateML,
+   unfoldML,
+   reverseML,
+   ) where
 
 import Control.Monad.Catch
+import Control.Monad.Data.Class
 import Control.Monad.Data.Foldable
 import Control.Monad.Data.List.Internal
 import Control.Monad.Data.Types (MList(..), BiCons(..), bc)
@@ -25,7 +30,7 @@ import qualified Data.List.Safe as LS
 
 -- |Tests whether an MList is empty.
 nullML :: Functor m => MList m a -> m Bool
-nullML (ML xs) = fmap (\case{Nil -> True; _ -> False}) xs
+nullML (ML xs) = bc True (const . const False) <$> xs
 
 -- |Returns the length of an MList.
 lengthML :: (Monad m, Integral i) => MList m a -> m i
@@ -36,7 +41,7 @@ lengthML = foldrM (\_ x -> (x+1)) 0
 --headML = maybeHeadML return (throwM LS.EmptyListException)
 
 headML :: Functor m => MList m a -> m a
-headML (ML xs) = fmap (bc (error "headML: empty list!") $ \h _ -> h) xs
+headML (ML xs) = bc (error "headML: empty list!") (const . id) <$> xs
 
 -- |Returns the tail of an MList.
 --tailML :: (Monad m, MonadThrow r) => MList m a -> m (r (MList m a))
@@ -58,7 +63,7 @@ takeWhileML f (ML xs) = ML $ xs >>= bc (return Nil) (\h t -> \case{True -> h :# 
 
 takeML :: (Applicative m, Integral a) => a -> MList m a -> MList m a
 takeML 0 _ = ML (pure Nil)
-takeML n (ML xs) = ML $ fmap (bc Nil $ \h t -> h :# takeML (n-1) t) xs
+takeML n (ML xs) = ML $ bc Nil (\h t -> h :# takeML (n-1) t) <$> xs
 
 dropML :: (Monad m, Integral a) => a -> MList m a -> MList m a
 dropML 0 xs = xs
@@ -68,22 +73,10 @@ dropWhileML :: Monad m => (a -> Bool) -> MList m a -> MList m a
 dropWhileML f (ML xs) = ML $ xs >>= bc (return Nil) (\h t -> if f h then runML (dropWhileML f t) else return (h :# t))
 
 iterateML :: Functor m => (a -> m a) -> a -> MList m a
-iterateML f x = ML $ fmap (\y -> y :# iterateML f y) (f x)
+iterateML f x = ML $ (\y -> y :# iterateML f y) <$> f x
 
+unfoldML :: Functor m => (b -> m (Maybe (a,b))) -> b -> MList m a
+unfoldML f x = ML $ maybe Nil (\(a,b) -> a :# unfoldML f b) <$> f x
 
-{-
-
--- |Unfolds an MList.
-unfoldML :: Monad m => (b -> m (Maybe (a,b))) -> b -> m (MList m a)
-unfoldML f acc = do v <- f acc
-                    return (case v of Nothing       -> MNil
-                                      Just (x,acc') -> x :# unfoldML f acc')
-
-
--- |Reverses an MList.
-reverseML :: Monad m => MList m a -> m (MList m a)
-reverseML = reverse' MNil
-  where reverse' acc MNil = return acc
-        reverse' acc (x :# xs) = xs >>= reverse' (x :# return acc)
-
--}
+reverseML :: Monad m => MList m a -> MList m a
+reverseML xs = ML $ fromMonadic xs >>= (runML . toMonadic . reverse)
