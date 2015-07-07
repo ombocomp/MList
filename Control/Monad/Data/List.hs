@@ -23,8 +23,6 @@ import Control.Monad.Data.List.Internal
 import Control.Monad.Data.Types (MList(..), BiCons(..), bc)
 import qualified Data.List.Safe as LS
 
-import Debug.Trace
-
 -- |Tests whether an MList is empty.
 nullML :: Functor m => MList m a -> m Bool
 nullML (ML xs) = fmap (\case{Nil -> True; _ -> False}) xs
@@ -55,11 +53,10 @@ initML = maybeInitML return (throwM LS.EmptyListException)
 lastML :: (Monad m, MonadThrow r) => MList m a -> m (r a)
 lastML = maybeLastML return (throwM LS.EmptyListException)
 
-takeWhileML :: Functor m => (a -> Bool) -> MList m a -> MList m a
-takeWhileML f (ML xs) = ML $
-   fmap (bc Nil $ \h t -> if f h then h :# takeWhileML f t else Nil) xs
+takeWhileML :: Monad m => (a -> m Bool) -> MList m a -> MList m a
+takeWhileML f (ML xs) = ML $ xs >>= bc (return Nil) (\h t -> \case{True -> h :# takeWhileML f t; False -> Nil} <$> f h)
 
-takeML :: (Applicative m, Integral a, Show a) => a -> MList m a -> MList m a
+takeML :: (Applicative m, Integral a) => a -> MList m a -> MList m a
 takeML 0 _ = ML (pure Nil)
 takeML n (ML xs) = ML $ fmap (bc Nil $ \h t -> h :# takeML (n-1) t) xs
 
@@ -72,6 +69,7 @@ dropWhileML f (ML xs) = ML $ xs >>= bc (return Nil) (\h t -> if f h then runML (
 
 iterateML :: Functor m => (a -> m a) -> a -> MList m a
 iterateML f x = ML $ fmap (\y -> y :# iterateML f y) (f x)
+
 
 {-
 
