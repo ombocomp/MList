@@ -4,6 +4,15 @@ module Control.Monad.Data.List.Internal where
 
 import Control.Monad.Data.Types
 
+maybeHeadML :: Functor m => a -> (b -> a) -> MList m b -> m a
+maybeHeadML err ok (ML xs) = bc err (const . ok) <$> xs
+
+--maybeTailML :: Monad m => a -> (b -> a) -> MList m b -> MList m a
+--maybeTailML err ok (ML xs) = ML $ xs >>= bc err (\_ t -> runML t)) 
+
+
+{-
+
 maybeHeadML :: Functor m => (a -> b) -> b -> MList m a -> m b
 maybeHeadML good bad (ML xs) = fmap (\case{Nil -> bad; (h :# _) -> good h}) xs
 
@@ -27,3 +36,5 @@ maybeLastML good bad (ML xs) = xs >>= (\case{Nil -> return bad; xs' -> good <$> 
       last' (h :# (ML t)) = t >>= \case Nil -> return h
                                         xs' -> last' xs'
       last' _ = error "BUG: failed pattern match in maybeLastML"
+
+-}

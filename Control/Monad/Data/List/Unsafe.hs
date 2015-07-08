@@ -8,7 +8,7 @@ import Control.Monad.Data.Types (MList(..), BiCons(..))
 
 -- |Returns the head of an MList.
 headML :: Functor m => MList m a -> m a
-headML = maybeHeadML id (error "headML: empty MList!")
+headML = maybeHeadML (error "headML: empty list!") id
 
 tailML :: Functor m => MList m a -> m (MList m a)
 tailML = maybeTailML id (error "tailML: empty MList!")
