@@ -6,17 +6,28 @@ module Control.Monad.Data.Foldable where
 
 import GHC.Exts (Constraint)
 
+newtype EndoM m a = EndoM{appEndoM :: a -> m a}
+
 -- |Foldable monadic structures.
 class FoldableM m where
-   -- |The constraint imposed on the return type. Generally @Monad r@.
+   -- |The constraint imposed on the return type. 'Monad' by default.
    type Con m (r :: * -> *) :: Constraint
+   type Con m r = Monad r
+   
+   -- |Combines the elements of a structure using a monoid.
+   foldM :: (Applicative r, Monoid a, Con m r) => m r a -> r a
+   foldM = foldMapM pure
+
+   -- |Maps the elements to a monoid and combines them.
+   foldMapM :: (Monoid b, Functor r, Con m r) => (a -> r b) -> m r a -> r b
+   foldMapM f = foldrM (\x acc -> (`mappend` acc) <$> f x) mempty
+
    -- |Monadic right-fold.
-   foldrM :: Con m r => (a -> b -> b) -> b -> m r a -> r b
+   foldrM :: Con m r => (a -> b -> r b) -> b -> m r a -> r b
 
 -- |Show for monadic structures.
 class ShowM m where
-   -- |The constraint on the return type constructor. 'Monad'
-   --  by default, but can be any subclass of 'Functor'.
+   -- |The constraint on the return type constructor. 'Monad' by default.
    type ShowCon m (r :: * -> *) :: Constraint
    type ShowCon m r = Monad r
 

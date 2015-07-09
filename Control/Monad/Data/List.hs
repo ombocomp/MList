@@ -54,7 +54,7 @@ nullML (ML xs) = bc True (const . const False) <$> xs
 
 -- |Returns the length of an MList.
 lengthML :: (Monad m, Integral i) => MList m a -> m i
-lengthML = foldrM (\_ x -> (x+1)) 0
+lengthML = foldrM (\_ x -> return $ x+1) 0
 
 headML :: (Functor m, MonadThrow r) => MList m a -> m (r a)
 headML = maybeHeadML (throwM LS.EmptyListException) return
