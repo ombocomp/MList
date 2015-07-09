@@ -74,22 +74,28 @@ iterateML f x = ML $ (\y -> y :# iterateML f y) <$> f x
 unfoldML :: Functor m => (b -> m (Maybe (a,b))) -> b -> MList m a
 unfoldML f x = ML $ maybe Nil (\(a,b) -> a :# unfoldML f b) <$> f x
 
+-- |Reverses an 'MList'. The list has to be finite.
 reverseML :: Monad m => MList m a -> MList m a
 reverseML xs = ML $ fromMonadic xs >>= (runML . toMonadic . reverse)
 
-replicateML :: (Integral a) => m a -> MList m a
-replicateML = undefined
+-- |Repeats an element a given number of times.
+replicateML :: (Applicative m, Integral a) => a -> m a -> MList m a
+replicateML n x = takeML n (repeatML x)
 
-repeatML :: m a -> MList m a
-repeatML = undefined
+-- |Repeats an item infinitely often.
+--
+--  __NOTE__: You can directly replicate an 'MList' via @repeatML xs@, but the result won't be joinable. For that, you have to write
+--            @repeatML (pure xs)@.
+repeatML :: Functor m => m a -> MList m a
+repeatML x = ML $ (:# repeatML x) <$> x
 
-cycleML :: MList m a -> MList m a
-cycleML = undefined
+cycleML :: Monad m => MList m a -> MList m a
+cycleML = join . repeatML . pure
 
-elemML :: Eq a => a -> MList m a -> m Bool
-elemML = undefined
+elemML :: (Monad m, Eq a) => a -> MList m a -> m Bool
+elemML x = nullML . dropWhileML (x ==)
 
-notElemML :: Eq a => a -> MList m a -> m Bool
+notElemML :: (Monad m, Eq a) => a -> MList m a -> m Bool
 notElemML x xs = not <$> elemML x xs
 
 zipML :: MList m a
