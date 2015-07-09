@@ -19,6 +19,25 @@ module Control.Monad.Data.List (
    iterateML,
    unfoldML,
    reverseML,
+   replicateML,
+   repeatML,
+   cycleML,
+   elemML,
+   notElemML,
+   zipML,
+   zip3ML,
+   zip4ML,
+   zip5ML,
+   zip6ML,
+   zip7ML,
+   zip8ML,
+   zipWithML,
+   zipWith3ML,
+   zipWith4ML,
+   zipWith5ML,
+   zipWith6ML,
+   zipWith7ML,
+   zipWith8ML,
    ) where
 
 import Control.Monad
@@ -57,11 +76,11 @@ lastML = undefined
 takeWhileML :: Monad m => (a -> m Bool) -> MList m a -> MList m a
 takeWhileML f (ML xs) = ML $ xs >>= bc (return Nil) (\h t -> \case{True -> h :# takeWhileML f t; False -> Nil} <$> f h)
 
-takeML :: (Applicative m, Integral a) => a -> MList m a -> MList m a
+takeML :: (Applicative m, Integral a) => a -> MList m b -> MList m b
 takeML 0 _ = ML (pure Nil)
 takeML n (ML xs) = ML $ bc Nil (\h t -> h :# takeML (n-1) t) <$> xs
 
-dropML :: (Monad m, Integral a) => a -> MList m a -> MList m a
+dropML :: (Monad m, Integral a) => a -> MList m b -> MList m b
 dropML 0 xs = xs
 dropML n (ML xs) = ML $ xs >>= bc (return Nil) (\_ t -> runML $ dropML (n-1) t)
 
@@ -79,7 +98,7 @@ reverseML :: Monad m => MList m a -> MList m a
 reverseML xs = ML $ fromMonadic xs >>= (runML . toMonadic . reverse)
 
 -- |Repeats an element a given number of times.
-replicateML :: (Applicative m, Integral a) => a -> m a -> MList m a
+replicateML :: (Applicative m, Integral a) => a -> m b -> MList m b
 replicateML n x = takeML n (repeatML x)
 
 -- |Repeats an item infinitely often.
